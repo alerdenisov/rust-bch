@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use network::Network;
-use ring::digest::SHA512;
+use ring::hmac::HMAC_SHA512;
 use ring::hmac;
 use rust_base58::base58::{FromBase58, ToBase58};
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
@@ -252,7 +252,7 @@ impl ExtendedKey {
         let private_key = &self.0[46..];
         let secp_par_secret_key = SecretKey::from_slice(&secp, &private_key)?;
         let chain_code = &self.0[13..45];
-        let key = hmac::SigningKey::new(&SHA512, chain_code);
+        let key = hmac::SigningKey::new(HMAC_SHA512, chain_code);
 
         let hmac = if index >= HARDENED_KEY {
             let mut v = Vec::<u8>::with_capacity(37);
@@ -308,7 +308,7 @@ impl ExtendedKey {
         }
 
         let chain_code = &self.0[13..45];
-        let key = hmac::SigningKey::new(&SHA512, chain_code);
+        let key = hmac::SigningKey::new(HMAC_SHA512, chain_code);
         let mut v = Vec::<u8>::with_capacity(65);
         let public_key = self.public_key()?;
         v.extend_from_slice(&public_key);
@@ -672,7 +672,7 @@ mod tests {
     fn master_private_key(seed: &str) -> ExtendedKey {
         let seed = hex::decode(seed).unwrap();
         let key = "Bitcoin seed".to_string();
-        let key = hmac::SigningKey::new(&SHA512, &key.as_bytes());
+        let key = hmac::SigningKey::new(HMAC_SHA512, &key.as_bytes());
         let hmac = hmac::sign(&key, &seed);
         ExtendedKey::new_private_key(
             Network::Mainnet,
